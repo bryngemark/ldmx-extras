@@ -3,7 +3,7 @@
 #include "TH1F.h"
 
 
-void getBeamTrajectory(float position=-880.)  {
+void getBeamTrajectory(float position=-880., float beamEnergy=4.)  {
 
   //known points 
   TGraphErrors * gPath = new TGraphErrors(3);
@@ -31,7 +31,7 @@ void getBeamTrajectory(float position=-880.)  {
   gAngle->SetMarkerStyle(kOpenSquare);
   gAngle->DrawClone("p same");
 
-  //now fit to extract the beding radius 
+  //now fit to extract the bending radius 
   TF1 * fBeam = new TF1("fBeam", "-[0]+sqrt( [0]*[0] - (x*x) )", -1000., 100);
   fBeam->SetParameter(0, -8800); //some support needed; manually found -8787 and -8822 respectively from input points 0 and 1 
   gPath->Fit(fBeam);
@@ -43,8 +43,23 @@ void getBeamTrajectory(float position=-880.)  {
   fAngle->SetLineColor(gAngle->GetMarkerColor());
   fAngle->DrawCopy("same");
 
+  float xPosAt4GeV=fBeam->Eval(position);
   //print the values at the input point used as argument
-  std::cout << "From the fits, we should expect the best x at z = " << position << " to be " << fBeam->Eval(position) << " and the angle of incidence to be " << fAngle->Eval(position) << " degrees." << std::endl;
+  std::cout << "From the fits to 4 GeV, we should expect the best x at z = " << position << " to be " << xPosAt4GeV << " and the angle of incidence to be " << fAngle->Eval(position) << " degrees." << std::endl;
 
+  //alrighty, now we know the bending radius (squared) from the fit. so we can extract the curve for a different beam energy
+  float bendingRadius= sqrt( fabs(fBeam->GetParameter(0)) );
+
+  //R is directly proportional to particle momentum
+  fBeam->SetParameter(0, - (bendingRadius*beamEnergy/4.)**2);
+  
+  //print the values at the input point used as argument
+  std::cout << "At " << beamEnergy << "  GeV, we should expect the best x at z = " << position << " to be " << fBeam->Eval(position) << std::endl;
+
+
+
+
+
+  
   //Done.
 }
